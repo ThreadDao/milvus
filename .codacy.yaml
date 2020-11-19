@@ -10,6 +10,6 @@ exclude_paths:
   - 'ci/**'
   - 'docker/**'
   - 'docs/**'
-  - 'tests/**'
+#  - 'tests/**'
   - '.github/**'
   - '.jenkins/**'
