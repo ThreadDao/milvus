@@ -176,7 +176,6 @@ class TestChaosData:
         tt_flush = datetime.datetime.now() - t0_flush
         log.info(f'flush {nb * 10} entities cost: {tt_flush}')
 
-        log.info(collection_w.indexes[0].params)
         if collection_w.has_index()[0]:
             collection_w.drop_index()
 
