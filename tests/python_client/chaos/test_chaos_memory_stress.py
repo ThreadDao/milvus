@@ -34,11 +34,7 @@ class TestChaosData:
 
     @pytest.fixture(scope="function", autouse=True)
     def connection(self, host, port):
-        connections.add_connection(default={"host": host, "port": port})
-        conn = connections.connect(alias='default')
-        if conn is None:
-            raise Exception("no connections")
-        return conn
+        connections.connect('default', host=host, port=port)
 
     @pytest.mark.tags(CaseLabel.L3)
     @pytest.mark.parametrize('chaos_yaml', get_chaos_yamls())
