@@ -161,14 +161,14 @@ class TestChaosData:
                                      schema=cf.gen_default_collection_schema(dim=dim), shards_num=1)
 
         # insert 256000 512 dim entities, size 512Mi
-        for i in range(2):
-            t0_insert = datetime.datetime.now()
-            df = cf.gen_default_dataframe_data(nb=nb // 2, dim=dim)
-            res = collection_w.insert(df)[0]
-            assert res.insert_count == nb // 2
-            # log.info(f'After {i + 1} insert, num_entities: {collection_w.num_entities}')
-            tt_insert = datetime.datetime.now() - t0_insert
-            log.info(f"{i} insert data cost: {tt_insert}")
+        # for i in range(2):
+        #     t0_insert = datetime.datetime.now()
+        #     df = cf.gen_default_dataframe_data(nb=nb // 2, dim=dim)
+        #     res = collection_w.insert(df)[0]
+        #     assert res.insert_count == nb // 2
+        #     # log.info(f'After {i + 1} insert, num_entities: {collection_w.num_entities}')
+        #     tt_insert = datetime.datetime.now() - t0_insert
+        #     log.info(f"{i} insert data cost: {tt_insert}")
 
         # flush
         t0_flush = datetime.datetime.now()
