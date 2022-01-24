@@ -146,3 +146,7 @@ class MilvusOperator(object):
             endpoint = res_object['status']['endpoint']
 
         return endpoint
+
+if __name__ == '__main__':
+    mic = MilvusOperator()
+    mic.uninstall('mic-memory', 'chaos-testing')
