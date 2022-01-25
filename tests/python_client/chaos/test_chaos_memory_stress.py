@@ -57,17 +57,17 @@ class TestChaosData:
         collection_w = ApiCollectionWrapper()
         collection_w.init_collection(name=c_name,
                                      schema=cf.gen_default_collection_schema(dim=dim))
-        for i in range(nb // per_nb):
-            t0 = datetime.datetime.now()
-            df = cf.gen_default_dataframe_data(nb=per_nb, dim=dim)
-            res = collection_w.insert(df)[0]
-            assert res.insert_count == per_nb
-            log.info(f'After {i + 1} insert, num_entities: {collection_w.num_entities}')
-            tt = datetime.datetime.now() - t0
-            log.info(f"{i} insert and flush data cost: {tt}")
+        # for i in range(nb // per_nb):
+        #     t0 = datetime.datetime.now()
+        #     df = cf.gen_default_dataframe_data(nb=per_nb, dim=dim)
+        #     res = collection_w.insert(df)[0]
+        #     assert res.insert_count == per_nb
+        #     log.info(f'After {i + 1} insert, num_entities: {collection_w.num_entities}')
+        #     tt = datetime.datetime.now() - t0
+        #     log.info(f"{i} insert and flush data cost: {tt}")
 
         # apply memory stress chaos
-        # log.info(collection_w.num_entities)
+        log.info(collection_w.num_entities)
         chaos_config = gen_experiment_config(chaos_yaml)
         log.debug(chaos_config)
         chaos_res = CusResource(kind=chaos_config['kind'],
