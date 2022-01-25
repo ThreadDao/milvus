@@ -49,11 +49,21 @@ class TestChaosData:
         expected: 1.If memory is insufficient, querynode is OOMKilled and available after restart
                   2.If memory is sufficient, succ rate of query and search both are 1.0
         """
-        c_name = 'chaos_memory_nx6DNW4q'
+        nb = 100000
+        per_nb = 50000
+        dim = 512
+        c_name = cf.gen_unique_str('chaos_memory')
         collection_w = ApiCollectionWrapper()
-        collection_w.init_collection(c_name)
-        log.debug(collection_w.schema)
-        log.debug(collection_w._shards_num)
+        collection_w.init_collection(name=c_name,
+                                     schema=cf.gen_default_collection_schema(dim=dim))
+        for i in range(nb // per_nb):
+            t0 = datetime.datetime.now()
+            df = cf.gen_default_dataframe_data(nb=per_nb, dim=dim)
+            res = collection_w.insert(df)[0]
+            assert res.insert_count == per_nb
+            log.info(f'After {i + 1} insert, num_entities: {collection_w.num_entities}')
+            tt = datetime.datetime.now() - t0
+            log.info(f"{i} insert and flush data cost: {tt}")
 
         # apply memory stress chaos
         chaos_config = gen_experiment_config(chaos_yaml)
@@ -150,7 +160,7 @@ class TestChaosData:
         expected:
         """
         # init collection and insert
-        nb = 256000  # vector size: 512*4*nb about 512Mi and create index need 2.8Gi memory
+        nb = 256000  # vector size: 512*4*nb about 512Mi and create index need 2.17Gi memory
         dim = 512
         # c_name = cf.gen_unique_str('chaos_memory')
         c_name = 'chaos_memory_gKs8aSUu'
