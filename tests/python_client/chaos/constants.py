@@ -17,7 +17,7 @@ ENTITIES_FOR_SEARCH = 3000  # entities for search_collection
 
 CHAOS_CONFIG_ENV = 'CHAOS_CONFIG_PATH'  # env variables for chao path
 TESTS_CONFIG_LOCATION = 'chaos_objects/memory_stress/'
-ALL_CHAOS_YAMLS = 'chaos_indexnode*.yaml'
+ALL_CHAOS_YAMLS = 'chaos_querynode*.yaml'
 RELEASE_NAME = 'test-querynode-pod-kill-17-33-50'
 WAIT_PER_OP = 10  # time to wait in seconds between operations
 CHAOS_DURATION = 120  # chaos duration time in seconds
