@@ -1,0 +1,14 @@
+kind: PhysicalMachineChaos
+apiVersion: chaos-mesh.org/v1alpha1
+metadata:
+  namespace: chaos-testing
+  name: physical-chaos-disk-fill
+spec:
+  action: disk-fill
+  address:
+    - http://10.100.32.147:31760
+  disk-fill:
+    size: 2G
+    path: /tmp
+    fill-by-fallocate: true
+  duration: 1m
