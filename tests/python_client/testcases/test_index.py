@@ -430,7 +430,7 @@ class TestNewIndexBase(TestcaseBase):
 
         for i in range(5):
             df = cf.gen_default_dataframe_data(10000, dim=512, start=i*10000)
-            collection_w.init_collection(df)
+            collection_w.insert(df)
 
         log.debug(collection_w.num_entities)
 
