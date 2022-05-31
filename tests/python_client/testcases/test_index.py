@@ -428,15 +428,16 @@ class TestNewIndexBase(TestcaseBase):
         schema = cf.gen_default_collection_schema(dim=512)
         collection_w = self.init_collection_wrap(name=cf.gen_unique_str(), schema=schema)
 
-        for i in range(5):
-            df = cf.gen_default_dataframe_data(10000, dim=512, start=i*10000)
+        for i in range(1):
+            df = cf.gen_default_dataframe_data(50000, dim=512)
             collection_w.insert(df)
 
         log.debug(collection_w.num_entities)
 
         index_params = {"index_type": "ANNOY", "metric_type": "IP", "params": {"n_trees": 10}}
-        collection_w.create_index(ct.default_float_vec_field_name, index_params, index_name=ct.default_index_name)
-        log.debug(collection_w.indexes[0].params)
+        index = ApiIndexWrapper.index(collection_w.collection, ct.default_float_vec_field_name, index_params)
+        # collection_w.create_index(ct.default_float_vec_field_name, index_params, index_name=ct.default_index_name)
+        log.debug(index.params)
 
     @pytest.mark.tags(CaseLabel.L1)
     def test_create_index_non_existed_field(self):
