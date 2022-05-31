@@ -107,7 +107,8 @@ def gen_binary_vec_field(name=ct.default_binary_vec_field_name, is_primary=False
 
 def gen_default_collection_schema(description=ct.default_desc, primary_field=ct.default_int64_field_name,
                                   auto_id=False, dim=ct.default_dim):
-    fields = [gen_int64_field(), gen_float_field(), gen_string_field(), gen_float_vec_field(dim=dim)]
+    # fields = [gen_int64_field(), gen_float_field(), gen_string_field(), gen_float_vec_field(dim=dim)]
+    fields = [gen_int64_field(), gen_float_field(), gen_float_vec_field(dim=dim)]
     schema, _ = ApiCollectionSchemaWrapper().init_collection_schema(fields=fields, description=description,
                                                                     primary_field=primary_field, auto_id=auto_id)
     return schema
@@ -189,12 +190,12 @@ def gen_binary_vectors(num, dim):
 def gen_default_dataframe_data(nb=ct.default_nb, dim=ct.default_dim, start=0):
     int_values = pd.Series(data=[i for i in range(start, start + nb)])
     float_values = pd.Series(data=[np.float32(i) for i in range(start, start + nb)], dtype="float32")
-    string_values = pd.Series(data=[str(i) for i in range(start, start + nb)], dtype="string")
+    # string_values = pd.Series(data=[str(i) for i in range(start, start + nb)], dtype="string")
     float_vec_values = gen_vectors(nb, dim)
     df = pd.DataFrame({
         ct.default_int64_field_name: int_values,
         ct.default_float_field_name: float_values,
-        ct.default_string_field_name: string_values,
+        # ct.default_string_field_name: string_values,
         ct.default_float_vec_field_name: float_vec_values
     })
     return df
