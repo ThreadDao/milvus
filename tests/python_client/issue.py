@@ -10,7 +10,7 @@ if __name__ == '__main__':
 
     # configure milvus hostname and port
     print(f"\nCreate connection...")
-    connections.connect(host="10.98.0.9", port=19530)
+    connections.connect(host="10.98.0.5", port=19530)
 
     # List all collection names
     print(f"\nList collections...")
@@ -18,7 +18,7 @@ if __name__ == '__main__':
 
     # Create a collection named 'demo_film_tutorial'
     print(f"\nCreate collection...")
-    dim = 512
+    dim = 128
     field1 = FieldSchema(name="release_year", dtype=DataType.INT64, description="int64", is_primary=True)
     field2 = FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, description="float vector", dim=dim, is_primary=False)
     schema = CollectionSchema(fields=[field1, field2], description="collection description")
