@@ -25,8 +25,8 @@ if __name__ == '__main__':
     collection = Collection(name='demo_film_tutorial', data=None, schema=schema)
 
     print(f"\nInsert...")
-    # num = 50000
-    num = 50
+    num = 50000
+    # num = 50
     data = [
         [i for i in range(num)],
         np.random.random([num, dim]).tolist(),
