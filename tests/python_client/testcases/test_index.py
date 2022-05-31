@@ -435,7 +435,8 @@ class TestNewIndexBase(TestcaseBase):
         log.debug(collection_w.num_entities)
 
         index_params = {"index_type": "ANNOY", "metric_type": "IP", "params": {"n_trees": 10}}
-        index = ApiIndexWrapper.index(collection_w.collection, ct.default_float_vec_field_name, index_params)
+        index_wrapper = ApiIndexWrapper()
+        index = index_wrapper.init_index(collection_w.collection, ct.default_float_vec_field_name, index_params)[0]
         # collection_w.create_index(ct.default_float_vec_field_name, index_params, index_name=ct.default_index_name)
         log.debug(index.params)
 
