@@ -428,8 +428,9 @@ class TestNewIndexBase(TestcaseBase):
         schema = cf.gen_default_collection_schema(dim=512)
         collection_w = self.init_collection_wrap(name=cf.gen_unique_str(), schema=schema)
 
-        df = cf.gen_default_dataframe_data(50000)
-        collection_w.init_collection(df)
+        for i in range(5):
+            df = cf.gen_default_dataframe_data(10000, dim=512, start=i*10000)
+            collection_w.init_collection(df)
 
         log.debug(collection_w.num_entities)
 
