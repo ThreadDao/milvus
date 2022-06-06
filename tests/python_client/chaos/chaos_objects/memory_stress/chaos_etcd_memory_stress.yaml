@@ -9,7 +9,7 @@ spec:
       - chaos-testing
     labelSelectors:
       app.kubernetes.io/name: etcd
-      app.kubernetes.io/instance: mic-memory-etcd
+      app.kubernetes.io/instance: mic-zong-etcd
   mode: all
   stressors:
     memory:

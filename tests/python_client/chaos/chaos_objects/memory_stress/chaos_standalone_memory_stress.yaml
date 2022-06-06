@@ -1,18 +1,17 @@
 kind: StressChaos
 apiVersion: chaos-mesh.org/v1alpha1
 metadata:
-  name: test-querynode-memory-stress
+  name: test-standalone-memory-stress
   namespace: chaos-testing
 spec:
   selector:
     namespaces:
       - chaos-testing
     labelSelectors:
+      app.kubernetes.io/component: standalone
+      app.kubernetes.io/instance: milvus-memory
       app.kubernetes.io/name: milvus
-      app.kubernetes.io/instance: mic-memory
-      app.kubernetes.io/component: querynode
-  mode: all
-  value: "2"
+  mode: one
   stressors:
     memory:
       workers: 4

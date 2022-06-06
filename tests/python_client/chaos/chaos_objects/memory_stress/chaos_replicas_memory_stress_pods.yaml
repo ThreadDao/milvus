@@ -7,11 +7,10 @@ spec:
   selector:
     pods:
       chaos-testing:
-        - mic-replica-milvus-querynode-86c77dd756-rfw8r
-        - mic-replica-milvus-querynode-86c77dd756-wmtdk
+        - mic-zong-milvus-querynode-57f96d585b-8tlgb
   mode: all
   stressors:
     memory:
       workers: 4
-      size: 85%
-  duration: 3m
+      size: 80%
+  duration: 5m

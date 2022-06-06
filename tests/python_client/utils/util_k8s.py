@@ -285,7 +285,10 @@ def get_metrics_querynode_sq_req_count():
 
 if __name__ == '__main__':
     label = "app.kubernetes.io/name=milvus, component=querynode"
-    instance_name = get_milvus_instance_name("chaos-testing", "10.96.250.111")
-    res = get_pod_list("chaos-testing", label_selector=label)
-    m = get_pod_ip_name_pairs("chaos-testing", label_selector=label)
-    export_pod_logs(namespace='chaos-testing', label_selector=label)
+    label = "app.kubernetes.io/instance=mic-zong"
+    # instance_name = get_milvus_instance_name("chaos-testing", "10.96.250.111")
+    # res = get_pod_list("chaos-testing", label_selector=label)
+    connections.connect("default", host="10.98.0.9", port=19530)
+    m = get_querynode_id_pod_pairs("chaos-testing", label_selector=label)
+    print(m)
+    # export_pod_logs(namespace='chaos-testing', label_selector=label, release_name='mic-zong')
