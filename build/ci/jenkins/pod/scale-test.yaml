@@ -33,4 +33,4 @@ spec:
   - name: qa-kubeconfig
     secret:
       secretName: qa-kubeconfig
-  serviceAccountName: account-milvus-test
+#  serviceAccountName: account-milvus-test
