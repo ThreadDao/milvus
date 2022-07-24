@@ -19,9 +19,9 @@ spec:
       requests:
         memory: 12Gi
         cpu: 8.0
-    volumeMounts:
-    - name: qa-kubeconfig
-      mountPath: /root/.kube/
+#    volumeMounts:
+#    - name: qa-kubeconfig
+#      mountPath: /root/.kube/
   - name: jnlp
     image: jenkins/inbound-agent:4.11-1-jdk8
     resources:
@@ -29,8 +29,8 @@ spec:
       requests:
         memory: 256Mi
         cpu: 100m
-  volumes:
-  - name: qa-kubeconfig
-    secret:
-      secretName: qa-kubeconfig
+#  volumes:
+#  - name: qa-kubeconfig
+#    secret:
+#      secretName: qa-kubeconfig
 #  serviceAccountName: account-milvus-test
