@@ -12,6 +12,8 @@ MILVUS_VER = 'v1alpha1'
 MILVUS_PLURAL = 'milvusclusters'
 # MILVUS_PLURAL = 'milvuses'
 MILVUS_KIND = 'MilvusCluster'
+
+
 # MILVUS_KIND = 'Milvus'
 
 
@@ -155,3 +157,7 @@ class MilvusOperator(object):
 
         return endpoint
 
+
+if __name__ == '__main__':
+    mc = MilvusOperator()
+    mc.wait_for_healthy()

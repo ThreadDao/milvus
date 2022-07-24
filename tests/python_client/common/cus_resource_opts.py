@@ -79,7 +79,8 @@ class CustomResourceOperations(object):
     def get(self, metadata_name):
         """get a customer resources by name in k8s"""
         try:
-            config.load_kube_config()
+            # config.load_kube_config()
+            config.load_incluster_config()
             api_instance = client.CustomObjectsApi()
             api_response = api_instance.get_namespaced_custom_object(self.group, self.version,
                                                                      self.namespace, self.plural,
