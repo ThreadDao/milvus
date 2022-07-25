@@ -160,4 +160,4 @@ class MilvusOperator(object):
 
 if __name__ == '__main__':
     mc = MilvusOperator()
-    mc.wait_for_healthy()
+    mc.wait_for_healthy('standalone-memory')
