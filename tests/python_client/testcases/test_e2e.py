@@ -4,14 +4,16 @@ import pytest
 from base.client_base import TestcaseBase
 from common import common_func as cf
 from common import common_type as ct
-from common.common_type import CaseLabel
+from common.common_type import CaseLabel, CheckTasks
 from utils.util_log import test_log as log
 
 prefix = "e2e_"
+load_timeout = 54000  # 15h
 
 
 class TestE2e(TestcaseBase):
     """ Test case of end to end"""
+
     @pytest.mark.tags(CaseLabel.L1)
     def test_milvus_default(self):
         # create
@@ -41,7 +43,7 @@ class TestE2e(TestcaseBase):
         log.info(f"assert flush: {tt}, entities: {entities}")
 
         # search
-        collection_w.load()
+        collection_w.load(timeout=load_timeout)
         search_vectors = cf.gen_vectors(1, ct.default_dim)
         search_params = {"metric_type": "L2", "params": {"nprobe": 16}}
         t0 = time.time()
@@ -61,14 +63,17 @@ class TestE2e(TestcaseBase):
         t0 = time.time()
         index, _ = collection_w.create_index(field_name=ct.default_float_vec_field_name,
                                              index_params=_index_params,
-                                             name=cf.gen_unique_str())
+                                             name=cf.gen_unique_str(), timeout=18000)
         tt = time.time() - t0
         log.info(f"assert index: {tt}")
         assert len(collection_w.indexes) == 1
 
+        # compact
+        collection_w.compact()
+
         # search
         t0 = time.time()
-        collection_w.load()
+        collection_w.load(timeout=load_timeout)
         tt = time.time() - t0
         log.info(f"assert load: {tt}")
         search_vectors = cf.gen_vectors(1, ct.default_dim)
@@ -85,3 +90,7 @@ class TestE2e(TestcaseBase):
         res, _ = collection_w.query(term_expr)
         tt = time.time() - t0
         log.info(f"assert query result {len(res)}: {tt}")
+
+        # delete
+        collection_w.delete(term_expr)
+        collection_w.query(term_expr, check_task=CheckTasks.check_query_empty)

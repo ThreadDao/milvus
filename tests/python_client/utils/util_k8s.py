@@ -316,6 +316,35 @@ def get_metrics_querynode_sq_req_count():
         raise Exception(-1, f"Failed to get metrics with status code {response.status_code}")
 
 
+def get_release_by_service_host(host, namespace='qa', component='proxy'):
+    """
+    get release name by service host ip
+
+    :param namespace: the namespace where the release
+    :type namespace: str
+
+    :param host: milvus loadbalance ingress ip
+    :type host: str
+
+    :param component: the component of the service
+                      if release is cluster, component is proxy; if release is standalone, component is standalone
+    : type component: str, proxy or standalone
+
+    :example:
+            >>> release_name = get_release_by_host("10.96.250.111", namespace="chaos-testing", component='standalone')
+            "my-release"
+    """
+    init_k8s_client_config()
+    v1 = client.CoreV1Api()
+    service = v1.list_namespaced_service(namespace=namespace, label_selector=f'app.kubernetes.io/component={component}')
+    release_name = ""
+    for item in service.items:
+        if item.status.load_balancer.ingress[0].ip == host:
+            release_name = item.metadata.labels["app.kubernetes.io/instance"]
+
+    return release_name
+
+
 if __name__ == '__main__':
     label = "app.kubernetes.io/name=milvus, component=querynode"
     instance_name = get_milvus_instance_name("chaos-testing", "10.96.250.111")
