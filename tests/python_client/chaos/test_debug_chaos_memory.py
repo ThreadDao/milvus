@@ -186,7 +186,7 @@ class TestIssue:
 
         def loop_insert():
             """ continuously search """
-            for i in range(150):
+            for i in range(200):
                 do_insert()
 
         try:
@@ -208,6 +208,9 @@ class TestIssue:
         except MilvusException as e:
             wait_pods_ready("chaos-testing", "app.kubernetes.io/instance=milvus-chaos")
             do_insert()
+        finally:
+            meta_name = chaos_config.get('metadata', None).get('name', None)
+            chaos_res.delete(metadata_name=meta_name)
 
         # log.debug(collection_w.num_entities)
         collection_w.load()
