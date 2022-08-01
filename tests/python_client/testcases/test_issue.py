@@ -39,7 +39,7 @@ class TestIssue(TestcaseBase):
                                 default_search_params, 10, timeout_decorator=360)
 
         tasks = []
-        with ThreadPoolExecutor(max_workers=5) as t:
+        with ThreadPoolExecutor(max_workers=8) as t:
             for i in range(20):
                 task = t.submit(do_collection)
                 tasks.append(task)
