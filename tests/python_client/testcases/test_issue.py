@@ -1,4 +1,4 @@
-import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 import numpy as np
@@ -38,13 +38,14 @@ class TestIssue(TestcaseBase):
             collection_w.search(cf.gen_vectors(2, dim=3840), "feature",
                                 default_search_params, 10, timeout_decorator=360)
 
-        t_list = []
-        for i in range(20):
-            t = threading.Thread(target=do_collection, args=(), )
-            t.start()
-            t_list.append(t)
-        for t in t_list:
-            t.join()
+        tasks = []
+        with ThreadPoolExecutor(max_workers=5) as t:
+            for i in range(20):
+                task = t.submit(do_collection)
+                tasks.append(task)
+
+        for task in tasks:
+            task.done()
 
     def _test_tmp_collection(self):
         # connect
