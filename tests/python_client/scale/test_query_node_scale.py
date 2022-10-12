@@ -27,6 +27,7 @@ def verify_load_balance(c_name, host, port=19530):
     verify load balance is available after scale
     """
     connections.connect('default', host=host, port=port)
+
     # verify load balance
     utility_w = ApiUtilityWrapper()
     collection_w = ApiCollectionWrapper()
@@ -44,18 +45,23 @@ def verify_load_balance(c_name, host, port=19530):
     src_node_id = all_querynodes[0]
     des_node_ids = all_querynodes[1:]
     sealed_segment_ids = segment_distribution[src_node_id]["sealed"]
+
     # load balance
     utility_w.load_balance(collection_w.name, src_node_id, des_node_ids, sealed_segment_ids)
+    time.sleep(10)
+
     # get segments distribution after load balance
     res, _ = utility_w.get_query_segment_info(collection_w.name)
     log.debug(res)
     segment_distribution = cf.get_segment_distribution(res)
     sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+
     # assert src node has no sealed segments
     assert sealed_segment_ids_after_load_banalce == []
     des_sealed_segment_ids = []
     for des_node_id in des_node_ids:
         des_sealed_segment_ids += segment_distribution[des_node_id]["sealed"]
+
     # assert sealed_segment_ids is subset of des_sealed_segment_ids
     assert set(sealed_segment_ids).issubset(des_sealed_segment_ids)
 
@@ -114,7 +120,7 @@ class TestQueryNodeScale:
                 log.debug(collection_w.num_entities)
 
             # create index
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             assert collection_w.index()[0] == Index(collection_w.collection, ct.default_float_vec_field_name,
                                                     default_index_params)
@@ -219,6 +225,9 @@ class TestQueryNodeScale:
             collection_w = ApiCollectionWrapper()
             collection_w.init_collection(name=cf.gen_unique_str("scale_out"), schema=cf.gen_default_collection_schema(),
                                          using='scale-replica', shards_num=3)
+
+            # create index
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
 
             # insert 10 sealed segments
             for i in range(5):
@@ -329,6 +338,8 @@ class TestQueryNodeScale:
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
 
             # verify search success
+            collection_w.release()
+            collection_w.load(replica_number=2)
             collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                 ct.default_float_vec_field_name, ct.default_search_params, ct.default_limit)
             # Verify replica info is correct

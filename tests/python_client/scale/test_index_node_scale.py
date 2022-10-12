@@ -14,7 +14,7 @@ from utils.util_log import test_log as log
 from utils.util_pymilvus import get_latest_tag
 
 nb = 10000
-default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 128}}
+default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
 
 
 class TestIndexNodeScale:
@@ -74,7 +74,7 @@ class TestIndexNodeScale:
             # create index
             # Note that the num of segments and the num of indexNode are related to indexing time
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t0 = datetime.datetime.now() - start
             log.info(f'Create index on {init_replicas} indexNode cost t0: {t0}')
@@ -90,14 +90,14 @@ class TestIndexNodeScale:
 
             # create index again
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t1 = datetime.datetime.now() - start
             log.info(f'Create index on {expand_replicas} indexNode cost t1: {t1}')
             collection_w.drop_index()
 
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t2 = datetime.datetime.now() - start
             log.info(f'Create index on {expand_replicas} indexNode cost t2: {t2}')
@@ -164,7 +164,7 @@ class TestIndexNodeScale:
 
             # create index on collection one and two
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t0 = datetime.datetime.now() - start
 
@@ -179,7 +179,7 @@ class TestIndexNodeScale:
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
 
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t1 = datetime.datetime.now() - start
             log.info(f'Create index on 1 indexNode cost t1: {t1}')
@@ -187,7 +187,7 @@ class TestIndexNodeScale:
             assert not collection_w.has_index()[0]
 
             start = datetime.datetime.now()
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             t2 = datetime.datetime.now() - start
             log.info(f'Create index on 1 indexNode cost t2: {t2}')
