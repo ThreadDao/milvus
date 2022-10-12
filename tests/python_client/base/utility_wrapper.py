@@ -182,12 +182,12 @@ class ApiUtilityWrapper:
             if task.task_id in pending_task_ids:
                 log.info(f"task {task.task_id} state transfer from pending to {task.state_name}")
 
-    def get_query_segment_info(self, collection_name, timeout=None, using="default", check_task=None, check_items=None):
+    def get_query_segment_info(self, collection_name, timeout=None, using="default", check_task=None, check_items=None, **kwargs):
         timeout = TIMEOUT if timeout is None else timeout
         func_name = sys._getframe().f_code.co_name
-        res, is_succ = api_request([self.ut.get_query_segment_info, collection_name, timeout, using])
+        res, is_succ = api_request([self.ut.get_query_segment_info, collection_name, timeout, using], **kwargs)
         check_result = ResponseChecker(res, func_name, check_task, check_items, is_succ,
-                                       collection_name=collection_name, timeout=timeout, using=using).run()
+                                       collection_name=collection_name, timeout=timeout, using=using, **kwargs).run()
         return res, check_result
 
     def loading_progress(self, collection_name, partition_names=None,

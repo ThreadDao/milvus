@@ -10,15 +10,14 @@ from customize.milvus_operator import MilvusOperator
 from scale import constants, scale_common
 from pymilvus import connections, MilvusException
 from utils.util_log import test_log as log
-from utils.util_k8s import wait_pods_ready, read_pod_log
-from utils.util_pymilvus import get_latest_tag
+from utils.util_k8s import wait_pods_ready
 from utils.wrapper import counter
 
 
 class TestDataNodeScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_data_node(self):
+    def test_scale_data_node(self, image_tag):
         """
         target: test scale dataNode
         method: 1.deploy milvus cluster with 2 dataNode
@@ -32,8 +31,8 @@ class TestDataNodeScale:
                   Average dataNode memory usage
         """
         release_name = "scale-data"
-        image_tag = get_latest_tag()
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        log.info(f"milvus image {image}")
 
         data_config = {
             'metadata.namespace': constants.NAMESPACE,
@@ -50,6 +49,9 @@ class TestDataNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
 
         try:
             # connect
@@ -82,6 +84,7 @@ class TestDataNodeScale:
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
             log.debug("Expand dataNode test finished")
+            scale_common.get_pod_names_list(label_selector=label)
 
             # create new collection and insert
             new_c_name = cf.gen_unique_str("scale_data")
@@ -118,8 +121,8 @@ class TestDataNodeScale:
             # raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
 
             mic.uninstall(release_name, namespace=constants.NAMESPACE)

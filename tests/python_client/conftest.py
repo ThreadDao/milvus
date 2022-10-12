@@ -43,7 +43,9 @@ def pytest_addoption(parser):
     parser.addoption('--term_expr', action='store', default="term_expr", help="expr of query quest")
     parser.addoption('--check_content', action='store', default="check_content", help="content of check")
     parser.addoption('--field_name', action='store', default="field_name", help="field_name of index")
-    parser.addoption('--replica_num', type='int', action='store', default=ct.default_replica_num, help="memory replica number")
+    parser.addoption('--replica_num', type='int', action='store', default=ct.default_replica_num,
+                     help="memory replica number")
+    parser.addoption('--image_tag', action='store', default='2.2.0-latest', help="image tag to deploy server")
 
 
 @pytest.fixture
@@ -78,7 +80,7 @@ def secure(request):
 
 @pytest.fixture
 def milvus_ns(request):
-    return request.config.getoption("--milvus_ns") 
+    return request.config.getoption("--milvus_ns")
 
 
 @pytest.fixture
@@ -168,6 +170,11 @@ def field_name(request):
     return request.config.getoption("--field_name")
 
 
+@pytest.fixture
+def image_tag(request):
+    return request.config.getoption("--image_tag")
+
+
 """ fixture func """
 
 
@@ -182,6 +189,7 @@ def initialize_env(request):
     secure = request.config.getoption("--secure")
     clean_log = request.config.getoption("--clean_log")
     replica_num = request.config.getoption("--replica_num")
+    image_tag = request.config.getoption("--image_tag")
 
     """ params check """
     assert ip_check(host) and number_check(port)

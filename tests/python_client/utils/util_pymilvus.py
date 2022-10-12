@@ -1038,8 +1038,8 @@ def get_latest_tag(limit=100, tag_prefix="master", tag_latest="master-latest"):
 
     if latest_tag == "":
         latest_tag = tag_latest
-        print("Can't find the latest image name")
-    print("The image name used is %s" % str(latest_tag))
+        log.warning("Can't find the latest image name")
+    log.info("The image name used is %s" % str(latest_tag))
     return latest_tag
 
 

@@ -10,8 +10,7 @@ from common.common_type import default_nb
 from common.common_type import CaseLabel
 from scale import scale_common as sc, constants
 from utils.util_log import test_log as log
-from utils.util_k8s import wait_pods_ready, read_pod_log
-from utils.util_pymilvus import get_latest_tag
+from utils.util_k8s import wait_pods_ready
 
 
 def e2e_milvus_parallel(process_num, host, c_name):
@@ -29,7 +28,7 @@ def e2e_milvus_parallel(process_num, host, c_name):
 class TestProxyScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_proxy(self):
+    def test_scale_proxy(self, image_tag):
         """
         target: test milvus operation after proxy expand
         method: 1.deploy 1 proxy replicas
@@ -42,8 +41,8 @@ class TestProxyScale:
         # deploy milvus cluster with one proxy
         fail_count = 0
         release_name = "scale-proxy"
-        image_tag = get_latest_tag()
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        log.info(f"milvus image {image}")
         data_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -60,6 +59,9 @@ class TestProxyScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        sc.get_pod_names_list(label_selector=label)
 
         try:
             c_name = cf.gen_unique_str("proxy_scale")
@@ -78,6 +80,7 @@ class TestProxyScale:
             mic.upgrade(release_name, {'spec.components.proxy.replicas': 2}, constants.NAMESPACE)
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
+            sc.get_pod_names_list(label_selector=label)
 
             e2e_milvus_parallel(2, host, c_name)
             log.info('Milvus test after shrink')
@@ -99,7 +102,7 @@ class TestProxyScale:
         finally:
             log.info(f'Test finished with {fail_count} fail request')
             assert fail_count <= 1
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)

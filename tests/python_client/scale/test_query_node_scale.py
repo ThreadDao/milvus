@@ -14,8 +14,7 @@ from common import common_type as ct
 from scale import constants, scale_common
 from pymilvus import Index, connections, MilvusException
 from utils.util_log import test_log as log
-from utils.util_k8s import wait_pods_ready, read_pod_log
-from utils.util_pymilvus import get_latest_tag
+from utils.util_k8s import wait_pods_ready
 from utils.wrapper import counter
 
 nb = 10000
@@ -27,11 +26,14 @@ def verify_load_balance(c_name, host, port=19530):
     verify load balance is available after scale
     """
     connections.connect('default', host=host, port=port)
+
     # verify load balance
     utility_w = ApiUtilityWrapper()
     collection_w = ApiCollectionWrapper()
-    collection_w.init_collection(c_name)
+    collection_w.init_collection(c_name, active_trace=True)
     ms = MilvusSys()
+
+    # get segment info before load balance
     res, _ = utility_w.get_query_segment_info(collection_w.name)
     log.debug(res)
     segment_distribution = cf.get_segment_distribution(res)
@@ -44,18 +46,30 @@ def verify_load_balance(c_name, host, port=19530):
     src_node_id = all_querynodes[0]
     des_node_ids = all_querynodes[1:]
     sealed_segment_ids = segment_distribution[src_node_id]["sealed"]
+
     # load balance
     utility_w.load_balance(collection_w.name, src_node_id, des_node_ids, sealed_segment_ids)
-    # get segments distribution after load balance
-    res, _ = utility_w.get_query_segment_info(collection_w.name)
-    log.debug(res)
-    segment_distribution = cf.get_segment_distribution(res)
-    sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+    time.sleep(10)
+
     # assert src node has no sealed segments
-    assert sealed_segment_ids_after_load_banalce == []
+    timeout = 300
+    start = time.time()
+    while True:
+        time.sleep(10)
+        # get segments distribution after load balance
+        res, _ = utility_w.get_query_segment_info(collection_w.name)
+        segment_distribution = cf.get_segment_distribution(res)
+        sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+        log.debug(sealed_segment_ids_after_load_banalce)
+        if not sealed_segment_ids_after_load_banalce:
+            break
+        if time.time() - start > timeout:
+            raise MilvusException(1, f"Remove segments from load_balance src node more than {timeout}")
+
     des_sealed_segment_ids = []
     for des_node_id in des_node_ids:
         des_sealed_segment_ids += segment_distribution[des_node_id]["sealed"]
+
     # assert sealed_segment_ids is subset of des_sealed_segment_ids
     assert set(sealed_segment_ids).issubset(des_sealed_segment_ids)
 
@@ -64,7 +78,7 @@ def verify_load_balance(c_name, host, port=19530):
 class TestQueryNodeScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_query_node(self, host):
+    def test_scale_query_node(self, host, image_tag):
         """
         target: test scale queryNode
         method: 1.deploy milvus cluster with 1 queryNode
@@ -76,8 +90,8 @@ class TestQueryNodeScale:
         expected: Verify milvus remains healthy and search successfully during scale
         """
         release_name = "scale-query"
-        image_tag = get_latest_tag()
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'spec.mode': 'cluster',
@@ -95,6 +109,9 @@ class TestQueryNodeScale:
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
 
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
+
         try:
             # connect
             connections.add_connection(default={"host": host, "port": 19530})
@@ -105,7 +122,7 @@ class TestQueryNodeScale:
             # c_name = 'scale_query_DymS7kI4'
             collection_w = ApiCollectionWrapper()
             utility_w = ApiUtilityWrapper()
-            collection_w.init_collection(name=c_name, schema=cf.gen_default_collection_schema())
+            collection_w.init_collection(name=c_name, schema=cf.gen_default_collection_schema(), active_trace=True)
 
             # insert two segments
             for i in range(30):
@@ -114,7 +131,7 @@ class TestQueryNodeScale:
                 log.debug(collection_w.num_entities)
 
             # create index
-            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=60)
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
             assert collection_w.has_index()[0]
             assert collection_w.index()[0] == Index(collection_w.collection, ct.default_float_vec_field_name,
                                                     default_index_params)
@@ -130,7 +147,8 @@ class TestQueryNodeScale:
                 """ do search """
                 search_res, is_succ = collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                                           ct.default_float_vec_field_name, ct.default_search_params,
-                                                          ct.default_limit, check_task=CheckTasks.check_nothing)
+                                                          ct.default_limit, check_task=CheckTasks.check_nothing,
+                                                          enable_traceback=False)
                 assert len(search_res) == 1
                 return search_res, is_succ
 
@@ -144,6 +162,7 @@ class TestQueryNodeScale:
             # wait new QN running, continuously insert
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
+            scale_common.get_pod_names_list(label_selector=label)
 
             # verify load balance
             verify_load_balance(c_name, host=host)
@@ -151,7 +170,8 @@ class TestQueryNodeScale:
             @counter
             def do_insert():
                 """ do insert """
-                return collection_w.insert(cf.gen_default_dataframe_data(1000), check_task=CheckTasks.check_nothing)
+                return collection_w.insert(cf.gen_default_dataframe_data(1000), check_task=CheckTasks.check_nothing,
+                                           enable_traceback=False)
 
             def loop_insert():
                 """ loop insert """
@@ -178,12 +198,12 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
-    def test_scale_query_node_replicas(self):
+    def test_scale_query_replicas(self, image_tag):
         """
         target: test scale out querynode when load multi replicas
         method: 1.Deploy cluster with 5 querynodes
@@ -194,8 +214,8 @@ class TestQueryNodeScale:
         expected: Verify search succ rate is 100%
         """
         release_name = "scale-replica"
-        image_tag = get_latest_tag()
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -212,13 +232,19 @@ class TestQueryNodeScale:
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
 
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
+
         try:
             scale_querynode = random.choice([6, 7, 4, 3])
             connections.connect("scale-replica", host=host, port=19530)
 
-            collection_w = ApiCollectionWrapper()
+            collection_w = ApiCollectionWrapper(active_trace=True)
             collection_w.init_collection(name=cf.gen_unique_str("scale_out"), schema=cf.gen_default_collection_schema(),
-                                         using='scale-replica', shards_num=3)
+                                         using='scale-replica', shards_num=3, active_trace=True)
+
+            # create index
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
 
             # insert 10 sealed segments
             for i in range(5):
@@ -233,7 +259,8 @@ class TestQueryNodeScale:
                 """ do search """
                 search_res, is_succ = collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                                           ct.default_float_vec_field_name, ct.default_search_params,
-                                                          ct.default_limit, check_task=CheckTasks.check_nothing)
+                                                          ct.default_limit, check_task=CheckTasks.check_nothing,
+                                                          enable_traceback=False)
                 assert len(search_res) == 1
                 return search_res, is_succ
 
@@ -249,6 +276,7 @@ class TestQueryNodeScale:
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
             log.debug("Scale out querynode success")
+            scale_common.get_pod_names_list(label_selector=label)
 
             time.sleep(100)
             scale_common.check_succ_rate(do_search)
@@ -258,12 +286,12 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
-    def test_scale_in_query_node_less_than_replicas(self):
+    def test_scale_in_query_node_less_than_replicas(self, image_tag):
         """
         target: test scale in cluster and querynode < replica
         method: 1.Deploy cluster with 3 querynodes
@@ -274,8 +302,8 @@ class TestQueryNodeScale:
         expected: Verify search successfully after scale out
         """
         release_name = "scale-in-query"
-        image_tag = get_latest_tag()
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -291,15 +319,25 @@ class TestQueryNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
+
         try:
             # prepare collection
             connections.connect("scale-in", host=host, port=19530)
             utility_w = ApiUtilityWrapper()
-            collection_w = ApiCollectionWrapper()
+            collection_w = ApiCollectionWrapper(active_trace=True)
             collection_w.init_collection(name=cf.gen_unique_str("scale_in"), schema=cf.gen_default_collection_schema(),
-                                         using="scale-in")
+                                         using="scale-in", active_trace=True)
             collection_w.insert(cf.gen_default_dataframe_data())
             assert collection_w.num_entities == ct.default_nb
+
+            # create index
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
+            assert collection_w.has_index()[0]
+            assert collection_w.index()[0] == Index(collection_w.collection, ct.default_float_vec_field_name,
+                                                    default_index_params)
 
             # load multi replicas and search success
             collection_w.load(replica_number=2)
@@ -328,7 +366,11 @@ class TestQueryNodeScale:
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
 
+            scale_common.get_pod_names_list(label_selector=label)
+
             # verify search success
+            collection_w.release()
+            collection_w.load(replica_number=2)
             collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                 ct.default_float_vec_field_name, ct.default_search_params, ct.default_limit)
             # Verify replica info is correct
@@ -348,7 +390,7 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
