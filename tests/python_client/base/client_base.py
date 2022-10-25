@@ -43,7 +43,7 @@ class Base:
         self.collection_schema_wrap = ApiCollectionSchemaWrapper()
         self.field_schema_wrap = ApiFieldSchemaWrapper()
 
-    def teardown_method(self, method):
+    def _teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
         log.info("[teardown_method] Start teardown test case %s..." % method.__name__)
 

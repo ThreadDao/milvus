@@ -167,6 +167,10 @@ def check_content(request):
 def field_name(request):
     return request.config.getoption("--field_name")
 
+@pytest.fixture
+def replica_num(request):
+    return request.config.getoption("--replica_num")
+
 
 """ fixture func """
 

@@ -6,3 +6,6 @@ IMAGE_TAG = "master-20211227-b022615"  # tag of milvus image
 NAMESPACE = "qa"
 IF_NOT_PRESENT = "IfNotPresent"  # image pullPolicy IfNotPresent
 ALWAYS = "Always"  # image pullPolicy Always
+
+STANDALONE_MODE = "STANDALONE"
+CLUSTER_MODE = "DISTRIBUTED"

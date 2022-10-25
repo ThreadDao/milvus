@@ -143,7 +143,7 @@ class ApiCollectionWrapper:
 
     @trace()
     def flush(self, check_task=None, check_items=None, **kwargs):
-        timeout = kwargs.get("timeout", TIMEOUT)
+        timeout = kwargs.get("timeout", TIMEOUT*3)
         kwargs.update({"timeout": timeout})
 
         func_name = sys._getframe().f_code.co_name
