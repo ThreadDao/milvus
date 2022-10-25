@@ -1,5 +1,4 @@
 from pymilvus.client.types import CompactionPlans
-from pymilvus import Role
 
 from utils.util_log import test_log as log
 from common import common_type as ct
@@ -383,6 +382,7 @@ class ResponseChecker:
 
     @staticmethod
     def check_role_property(role, func_name, check_items):
+        from pymilvus import Role
         exp_func_name = "create_role"
         if func_name != exp_func_name:
             log.warning("The function name is {} rather than {}".format(func_name, exp_func_name))
