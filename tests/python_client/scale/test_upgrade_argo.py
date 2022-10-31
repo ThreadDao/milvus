@@ -4,6 +4,7 @@ import pytest
 from pymilvus import connections
 
 from base.collection_wrapper import ApiCollectionWrapper
+from base.utility_wrapper import ApiUtilityWrapper
 from base.schema_wrapper import ApiCollectionSchemaWrapper
 from common import common_func as cf
 from common import common_type as ct
@@ -19,6 +20,7 @@ ni = 2000
 class TestUpgradeIndex:
     collection_name = "upgrade_index"
     collection_w = ApiCollectionWrapper()
+    utility_w = ApiUtilityWrapper()
 
     @pytest.fixture(scope="function", autouse=True)
     def test_connect(self, host, port):
@@ -47,6 +49,8 @@ class TestUpgradeIndex:
         assert self.collection_w.indexes[0].params == default_index_params
         log.debug(f"collection index: {self.collection_w.indexes[0].params}")
 
+        self.utility_w.list_collections()
+
     def test_check_index_before_upgrade(self):
         """
         target: test build index with old image, handoff, search with new image
@@ -54,6 +58,7 @@ class TestUpgradeIndex:
         expected: all succ
         """
         # describe index
+        self.utility_w.list_collections()
         self.collection_w.init_collection(name=self.collection_name)
         log.debug(self.collection_w.num_entities)
         if self.collection_w.has_index()[0]:
