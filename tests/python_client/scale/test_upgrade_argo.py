@@ -103,6 +103,77 @@ class TestUpgradeIndex:
         assert len(search_res) == ct.default_nq
         assert len(search_res[0]) == ct.default_limit
 
+    def test_index_before_upgrade_multi(self):
+        collection_nums = 10
+        fields = [cf.gen_int64_field(is_primary=True), cf.gen_float_vec_field()]
+        schema, _ = ApiCollectionSchemaWrapper().init_collection_schema(fields=fields, auto_id=True)
+
+        for i in range(collection_nums):
+            # init collection
+            self.collection_w.init_collection(name=cf.gen_unique_str("upgrade_"), schema=schema)
+
+            # insert data
+            for i in range(nb // ni):
+                data = [cf.gen_vectors(nb=ni, dim=ct.default_dim)]
+                self.collection_w.insert(data)
+                log.debug(f"num entities: {self.collection_w.collection.num_entities}")
+
+            # create index
+            self.collection_w.create_index(ct.default_float_vec_field_name, default_index_params,
+                                           index_name=ct.default_index_name, timeout=3600)
+            assert self.collection_w.indexes[0].params == default_index_params
+            log.debug(f"collection index: {self.collection_w.indexes[0].params}")
+
+        collection_names, _ = self.utility_w.list_collections()
+        assert len(collection_names) == collection_nums
+
+    def test_check_index_before_upgrade_multi(self):
+        collection_names, _ = self.utility_w.list_collections()
+        for c in collection_names:
+            self.collection_w.init_collection(name=c)
+            log.debug(self.collection_w.num_entities)
+            if self.collection_w.has_index()[0]:
+                log.debug(self.collection_w.indexes[0].params)
+            assert self.collection_w.indexes[0].index_name == ct.default_index_name
+
+            # search succ
+            self.collection_w.load(timeout=20)
+            query_vectors = [[random.random() for _ in range(ct.default_dim)] for _ in range(ct.default_nq)]
+            search_res, _ = self.collection_w.search(query_vectors,
+                                                     ct.default_float_vec_field_name,
+                                                     ct.default_search_params, ct.default_limit)
+            assert len(search_res) == ct.default_nq
+            assert len(search_res[0]) == ct.default_limit
+
+            # new insert, flush and handoff
+            insert_res, _ = self.collection_w.insert([cf.gen_vectors(nb=ni, dim=ct.default_dim)])
+            log.debug(self.collection_w.num_entities)
+
+            # delete and query
+            expr = f'{ct.default_int64_field_name} in [{insert_res.primary_keys[10]}]'
+            self.collection_w.delete(expr=expr)
+            self.collection_w.query(expr=expr, check_task=CheckTasks.check_query_empty, timeout=120)
+
+            # compact
+            self.collection_w.compact()
+            self.collection_w.wait_for_compaction_completed()
+            self.collection_w.get_compaction_plans()
+
+            # drop index and re-create index
+            self.collection_w.release()
+            self.collection_w.drop_index(index_name=ct.default_index_name)
+            self.collection_w.create_index(ct.default_float_vec_field_name, default_index_params,
+                                           index_name=ct.default_index_name, timeout=3000)
+            assert self.collection_w.indexes[0].params == default_index_params
+
+            # search
+            self.collection_w.load()
+            search_res, _ = self.collection_w.search(query_vectors,
+                                                     ct.default_float_vec_field_name,
+                                                     ct.default_search_params, ct.default_limit)
+            assert len(search_res) == ct.default_nq
+            assert len(search_res[0]) == ct.default_limit
+
     def test_index_after_upgrade(self):
         """
         target: test do handoff search with old image, create index for data with new image
