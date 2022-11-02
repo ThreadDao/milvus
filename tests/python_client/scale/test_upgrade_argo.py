@@ -102,7 +102,7 @@ class TestUpgradeIndex:
         assert len(search_res[0]) == ct.default_limit
 
     def test_index_before_upgrade_multi(self):
-        collection_nums = 10
+        collection_nums = 100
         fields = [cf.gen_int64_field(is_primary=True), cf.gen_float_vec_field()]
         schema, _ = ApiCollectionSchemaWrapper().init_collection_schema(fields=fields, auto_id=True)
 
