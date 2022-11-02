@@ -101,6 +101,30 @@ class TestUpgradeIndex:
         assert len(search_res) == ct.default_nq
         assert len(search_res[0]) == ct.default_limit
 
+    def test_index_before_upgrade_multi(self):
+        collection_nums = 10
+        fields = [cf.gen_int64_field(is_primary=True), cf.gen_float_vec_field()]
+        schema, _ = ApiCollectionSchemaWrapper().init_collection_schema(fields=fields, auto_id=True)
+
+        for i in range(collection_nums):
+            # init collection
+            self.collection_w.init_collection(name=cf.gen_unique_str("upgrade_"), schema=schema)
+
+            # insert data
+            for i in range(nb // ni):
+                data = [cf.gen_vectors(nb=ni, dim=ct.default_dim)]
+                self.collection_w.insert(data)
+                log.debug(f"num entities: {self.collection_w.collection.num_entities}")
+
+            # create index
+            self.collection_w.create_index(ct.default_float_vec_field_name, default_index_params,
+                                           index_name=ct.default_index_name, timeout=3600)
+            assert self.collection_w.indexes[0].params == default_index_params
+            log.debug(f"collection index: {self.collection_w.indexes[0].params}")
+
+        collection_names, _ = self.utility_w.list_collections()
+        assert len(collection_names) == collection_nums
+
     def test_index_after_upgrade(self):
         """
         target: test do handoff search with old image, create index for data with new image
