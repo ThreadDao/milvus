@@ -33,6 +33,8 @@ def verify_load_balance(c_name, host, port=19530):
     collection_w = ApiCollectionWrapper()
     collection_w.init_collection(c_name)
     ms = MilvusSys()
+
+    # get segment info before load balance
     res, _ = utility_w.get_query_segment_info(collection_w.name)
     log.debug(res)
     segment_distribution = cf.get_segment_distribution(res)
@@ -50,14 +52,20 @@ def verify_load_balance(c_name, host, port=19530):
     utility_w.load_balance(collection_w.name, src_node_id, des_node_ids, sealed_segment_ids)
     time.sleep(10)
 
-    # get segments distribution after load balance
-    res, _ = utility_w.get_query_segment_info(collection_w.name)
-    log.debug(res)
-    segment_distribution = cf.get_segment_distribution(res)
-    sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
-
     # assert src node has no sealed segments
-    assert sealed_segment_ids_after_load_banalce == []
+    timeout = 60
+    start = time()
+    while True:
+        time.sleep(5)
+        # get segments distribution after load balance
+        res, _ = utility_w.get_query_segment_info(collection_w.name)
+        segment_distribution = cf.get_segment_distribution(res)
+        sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+        if not sealed_segment_ids_after_load_banalce:
+            break
+        if time() - start > timeout:
+            raise MilvusException(1, f"Remove segments from load_balance src node more than {timeout}")
+
     des_sealed_segment_ids = []
     for des_node_id in des_node_ids:
         des_sealed_segment_ids += segment_distribution[des_node_id]["sealed"]
@@ -309,6 +317,12 @@ class TestQueryNodeScale:
                                          using="scale-in")
             collection_w.insert(cf.gen_default_dataframe_data())
             assert collection_w.num_entities == ct.default_nb
+
+            # create index
+            collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
+            assert collection_w.has_index()[0]
+            assert collection_w.index()[0] == Index(collection_w.collection, ct.default_float_vec_field_name,
+                                                    default_index_params)
 
             # load multi replicas and search success
             collection_w.load(replica_number=2)
