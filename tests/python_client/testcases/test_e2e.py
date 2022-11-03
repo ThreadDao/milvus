@@ -61,7 +61,7 @@ class TestE2e(TestcaseBase):
         t0 = time.time()
         index, _ = collection_w.create_index(field_name=ct.default_float_vec_field_name,
                                              index_params=_index_params,
-                                             name=cf.gen_unique_str())
+                                             name=cf.gen_unique_str(), timeout=60)
         tt = time.time() - t0
         log.info(f"assert index: {tt}")
         assert len(collection_w.indexes) == 1
