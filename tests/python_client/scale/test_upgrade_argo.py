@@ -89,12 +89,14 @@ class TestUpgradeIndex:
         self.collection_w.get_compaction_plans()
 
         # drop index and re-create index
-        # self.collection_w.drop_index()
+        self.collection_w.drop_index()
         self.collection_w.create_index(ct.default_float_vec_field_name, default_index_params,
                                        index_name=ct.default_index_name, timeout=3000)
         assert self.collection_w.indexes[0].params == default_index_params
 
         # search
+        self.collection_w.release()
+        self.collection_w.load()
         search_res, _ = self.collection_w.search(query_vectors,
                                                  ct.default_float_vec_field_name,
                                                  ct.default_search_params, ct.default_limit)
