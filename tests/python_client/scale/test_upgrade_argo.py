@@ -61,7 +61,7 @@ class TestUpgradeIndex:
         self.utility_w.list_collections()
         self.collection_w.init_collection(name=self.collection_name)
         log.debug(self.collection_w.num_entities)
-        if self.collection_w.has_index()[0]:
+        if self.collection_w.has_index(index_name=ct.default_index_name)[0]:
             log.debug(self.collection_w.indexes[0].params)
         assert self.collection_w.indexes[0].index_name == ct.default_index_name
 
@@ -89,7 +89,7 @@ class TestUpgradeIndex:
         self.collection_w.get_compaction_plans()
 
         # drop index and re-create index
-        self.collection_w.drop_index()
+        self.collection_w.drop_index(index_name=ct.default_index_name)
         self.collection_w.create_index(ct.default_float_vec_field_name, default_index_params,
                                        index_name=ct.default_index_name, timeout=3000)
         assert self.collection_w.indexes[0].params == default_index_params
