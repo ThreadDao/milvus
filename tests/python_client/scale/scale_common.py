@@ -6,6 +6,21 @@ from utils.util_log import test_log as log
 from base.collection_wrapper import ApiCollectionWrapper
 from common import common_func as cf
 from common import common_type as ct
+from scale import constants
+from utils.util_k8s import get_pod_list
+
+
+def get_pod_names_list(label_selector, namespace=constants.NAMESPACE):
+    """
+    get all pods name list
+    """
+    pod_items = get_pod_list(namespace, label_selector)
+    pod_names = []
+    for pod_item in pod_items:
+        pod_name = pod_item.metadata.name
+        pod_names.append(pod_name)
+    log.info('\n'.join(map(str, pod_names)))
+    return pod_names
 
 
 def e2e_milvus(host, c_name):

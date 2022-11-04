@@ -6,12 +6,11 @@ from pymilvus import connections, MilvusException
 from base.collection_wrapper import ApiCollectionWrapper
 from common.common_type import CaseLabel
 from customize.milvus_operator import MilvusOperator
-from scale import constants
+from scale import constants, scale_common
 from common import common_func as cf
 from common import common_type as ct
-from utils.util_k8s import read_pod_log, wait_pods_ready
+from utils.util_k8s import wait_pods_ready
 from utils.util_log import test_log as log
-from utils.util_pymilvus import get_latest_tag
 
 nb = 10000
 default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
@@ -30,8 +29,8 @@ class TestIndexNodeScale:
         expected: The cost of one indexNode is about twice that of two indexNodes
         """
         release_name = "expand-index"
-        image_tag = get_latest_tag()
-        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        log.info(f"milvus image {image}")
         init_replicas = 1
         expand_replicas = 2
         data_config = {
@@ -53,6 +52,9 @@ class TestIndexNodeScale:
             # log.warning(f'Deploy {release_name} timeout and ready to uninstall')
             # mic.uninstall(release_name, namespace=constants.NAMESPACE)
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
 
         try:
             # connect
@@ -87,6 +89,7 @@ class TestIndexNodeScale:
             mic.upgrade(release_name, {'spec.components.indexNode.replicas': expand_replicas}, constants.NAMESPACE)
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
+            scale_common.get_pod_names_list(label_selector=label)
 
             # create index again
             start = datetime.datetime.now()
@@ -109,9 +112,9 @@ class TestIndexNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
     @pytest.mark.tags(CaseLabel.L3)
@@ -125,8 +128,8 @@ class TestIndexNodeScale:
         expected: The cost of one indexNode is about twice that of two indexNodes
         """
         release_name = "shrink-index"
-        image_tag = get_latest_tag()
-        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        log.info(f"milvus image {image}")
         data_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -143,6 +146,9 @@ class TestIndexNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
 
         try:
             # connect
@@ -177,6 +183,7 @@ class TestIndexNodeScale:
             mic.upgrade(release_name, {'spec.components.indexNode.replicas': 1}, constants.NAMESPACE)
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
+            scale_common.get_pod_names_list(label_selector=label)
 
             start = datetime.datetime.now()
             collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
@@ -200,7 +207,7 @@ class TestIndexNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
