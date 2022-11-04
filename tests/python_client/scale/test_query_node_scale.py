@@ -14,8 +14,7 @@ from common import common_type as ct
 from scale import constants, scale_common
 from pymilvus import Index, connections, MilvusException
 from utils.util_log import test_log as log
-from utils.util_k8s import wait_pods_ready, read_pod_log
-from utils.util_pymilvus import get_latest_tag
+from utils.util_k8s import wait_pods_ready
 from utils.wrapper import counter
 
 nb = 10000
@@ -90,8 +89,8 @@ class TestQueryNodeScale:
         expected: Verify milvus remains healthy and search successfully during scale
         """
         release_name = "scale-query"
-        image_tag = get_latest_tag()
-        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'spec.mode': 'cluster',
@@ -108,6 +107,9 @@ class TestQueryNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
 
         try:
             # connect
@@ -158,6 +160,7 @@ class TestQueryNodeScale:
             # wait new QN running, continuously insert
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
+            scale_common.get_pod_names_list(label_selector=label)
 
             # verify load balance
             verify_load_balance(c_name, host=host)
@@ -192,9 +195,9 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
     def test_scale_query_node_replicas(self):
@@ -208,8 +211,8 @@ class TestQueryNodeScale:
         expected: Verify search succ rate is 100%
         """
         release_name = "scale-replica"
-        image_tag = get_latest_tag()
-        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -225,6 +228,9 @@ class TestQueryNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
 
         try:
             scale_querynode = random.choice([6, 7, 4, 3])
@@ -266,6 +272,7 @@ class TestQueryNodeScale:
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
             log.debug("Scale out querynode success")
+            scale_common.get_pod_names_list(label_selector=label)
 
             time.sleep(100)
             scale_common.check_succ_rate(do_search)
@@ -275,9 +282,9 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
     def test_scale_in_query_node_less_than_replicas(self):
@@ -291,8 +298,8 @@ class TestQueryNodeScale:
         expected: Verify search successfully after scale out
         """
         release_name = "scale-in-query"
-        image_tag = get_latest_tag()
-        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
+        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
             'metadata.name': release_name,
@@ -308,6 +315,10 @@ class TestQueryNodeScale:
             host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
         else:
             raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+        label = f"app.kubernetes.io/instance={release_name}"
+        scale_common.get_pod_names_list(label_selector=label)
+
         try:
             # prepare collection
             connections.connect("scale-in", host=host, port=19530)
@@ -351,6 +362,8 @@ class TestQueryNodeScale:
             mic.wait_for_healthy(release_name, constants.NAMESPACE)
             wait_pods_ready(constants.NAMESPACE, f"app.kubernetes.io/instance={release_name}")
 
+            scale_common.get_pod_names_list(label_selector=label)
+
             # verify search success
             collection_w.release()
             collection_w.load(replica_number=2)
@@ -373,7 +386,7 @@ class TestQueryNodeScale:
             raise Exception(str(e))
 
         finally:
-            label = f"app.kubernetes.io/instance={release_name}"
-            log.info('Start to export milvus pod logs')
-            read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
+            # label = f"app.kubernetes.io/instance={release_name}"
+            # log.info('Start to export milvus pod logs')
+            # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
