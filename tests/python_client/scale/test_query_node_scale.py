@@ -53,7 +53,7 @@ def verify_load_balance(c_name, host, port=19530):
 
     # assert src node has no sealed segments
     timeout = 60
-    start = time()
+    start = time.time()
     while True:
         time.sleep(5)
         # get segments distribution after load balance
@@ -62,7 +62,7 @@ def verify_load_balance(c_name, host, port=19530):
         sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
         if not sealed_segment_ids_after_load_banalce:
             break
-        if time() - start > timeout:
+        if time.time() - start > timeout:
             raise MilvusException(1, f"Remove segments from load_balance src node more than {timeout}")
 
     des_sealed_segment_ids = []
