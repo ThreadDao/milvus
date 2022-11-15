@@ -92,6 +92,9 @@ class TestMilvusChaos:
         """
         try:
             self.collection_w.init_collection(collection_name)
+            index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 128}}
+            self.collection_w.create_index(field_name=ct.default_float_vec_field_name,
+                                           index_params=index_params, timeout=120)
             self.collection_w.load(replica_number=replica_num, check_task=CheckTasks.check_nothing)
             replicas, _ = self.collection_w.get_replicas()
             log.info(replicas)
