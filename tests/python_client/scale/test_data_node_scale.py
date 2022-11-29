@@ -17,7 +17,7 @@ from utils.wrapper import counter
 class TestDataNodeScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_data_node(self):
+    def test_scale_data_node(self, image_tag):
         """
         target: test scale dataNode
         method: 1.deploy milvus cluster with 2 dataNode
@@ -31,7 +31,7 @@ class TestDataNodeScale:
                   Average dataNode memory usage
         """
         release_name = "scale-data"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
 
         data_config = {

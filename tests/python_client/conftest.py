@@ -46,6 +46,7 @@ def pytest_addoption(parser):
     parser.addoption('--check_content', action='store', default="check_content", help="content of check")
     parser.addoption('--field_name', action='store', default="field_name", help="field_name of index")
     parser.addoption('--replica_num', type='int', action='store', default=ct.default_replica_num, help="memory replica number")
+    parser.addoption('--image_tag', action='store', default='2.2.0-latest', help="image tag to deploy server")
     parser.addoption('--minio_host', action='store', default="localhost", help="minio service's ip")
     parser.addoption('--uri', action='store', default="", help="uri for high level api")
     parser.addoption('--token', action='store', default="", help="token for high level api")
@@ -182,6 +183,10 @@ def check_content(request):
 @pytest.fixture
 def field_name(request):
     return request.config.getoption("--field_name")
+
+@pytest.fixture
+def image_tag(request):
+    return request.config.getoption("--image_tag")
 
 
 @pytest.fixture

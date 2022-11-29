@@ -28,7 +28,7 @@ def e2e_milvus_parallel(process_num, host, c_name):
 class TestProxyScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_proxy(self):
+    def test_scale_proxy(self, image_tag):
         """
         target: test milvus operation after proxy expand
         method: 1.deploy 1 proxy replicas
@@ -41,7 +41,7 @@ class TestProxyScale:
         # deploy milvus cluster with one proxy
         fail_count = 0
         release_name = "scale-proxy"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         data_config = {
             'metadata.namespace': constants.NAMESPACE,
