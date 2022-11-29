@@ -19,7 +19,7 @@ default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": 
 class TestIndexNodeScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_expand_index_node(self):
+    def test_expand_index_node(self, image_tag):
         """
         target: test expand indexNode from 1 to 2
         method: 1.deploy two indexNode
@@ -29,7 +29,7 @@ class TestIndexNodeScale:
         expected: The cost of one indexNode is about twice that of two indexNodes
         """
         release_name = "expand-index"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         init_replicas = 1
         expand_replicas = 2
@@ -118,7 +118,7 @@ class TestIndexNodeScale:
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_shrink_index_node(self):
+    def test_shrink_index_node(self, image_tag):
         """
         target: test shrink indexNode from 2 to 1
         method: 1.deploy two indexNode
@@ -128,7 +128,7 @@ class TestIndexNodeScale:
         expected: The cost of one indexNode is about twice that of two indexNodes
         """
         release_name = "shrink-index"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         data_config = {
             'metadata.namespace': constants.NAMESPACE,

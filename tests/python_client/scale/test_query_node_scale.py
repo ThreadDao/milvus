@@ -30,7 +30,7 @@ def verify_load_balance(c_name, host, port=19530):
     # verify load balance
     utility_w = ApiUtilityWrapper()
     collection_w = ApiCollectionWrapper()
-    collection_w.init_collection(c_name)
+    collection_w.init_collection(c_name, active_trace=True)
     ms = MilvusSys()
 
     # get segment info before load balance
@@ -52,14 +52,15 @@ def verify_load_balance(c_name, host, port=19530):
     time.sleep(10)
 
     # assert src node has no sealed segments
-    timeout = 60
+    timeout = 300
     start = time.time()
     while True:
-        time.sleep(5)
+        time.sleep(10)
         # get segments distribution after load balance
         res, _ = utility_w.get_query_segment_info(collection_w.name)
         segment_distribution = cf.get_segment_distribution(res)
         sealed_segment_ids_after_load_banalce = segment_distribution[src_node_id]["sealed"]
+        log.debug(sealed_segment_ids_after_load_banalce)
         if not sealed_segment_ids_after_load_banalce:
             break
         if time.time() - start > timeout:
@@ -77,7 +78,7 @@ def verify_load_balance(c_name, host, port=19530):
 class TestQueryNodeScale:
 
     @pytest.mark.tags(CaseLabel.L3)
-    def test_scale_query_node(self, host):
+    def test_scale_query_node(self, host, image_tag):
         """
         target: test scale queryNode
         method: 1.deploy milvus cluster with 1 queryNode
@@ -89,7 +90,7 @@ class TestQueryNodeScale:
         expected: Verify milvus remains healthy and search successfully during scale
         """
         release_name = "scale-query"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
@@ -121,7 +122,7 @@ class TestQueryNodeScale:
             # c_name = 'scale_query_DymS7kI4'
             collection_w = ApiCollectionWrapper()
             utility_w = ApiUtilityWrapper()
-            collection_w.init_collection(name=c_name, schema=cf.gen_default_collection_schema())
+            collection_w.init_collection(name=c_name, schema=cf.gen_default_collection_schema(), active_trace=True)
 
             # insert two segments
             for i in range(30):
@@ -146,7 +147,8 @@ class TestQueryNodeScale:
                 """ do search """
                 search_res, is_succ = collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                                           ct.default_float_vec_field_name, ct.default_search_params,
-                                                          ct.default_limit, check_task=CheckTasks.check_nothing)
+                                                          ct.default_limit, check_task=CheckTasks.check_nothing,
+                                                          enable_traceback=False)
                 assert len(search_res) == 1
                 return search_res, is_succ
 
@@ -168,7 +170,8 @@ class TestQueryNodeScale:
             @counter
             def do_insert():
                 """ do insert """
-                return collection_w.insert(cf.gen_default_dataframe_data(1000), check_task=CheckTasks.check_nothing)
+                return collection_w.insert(cf.gen_default_dataframe_data(1000), check_task=CheckTasks.check_nothing,
+                                           enable_traceback=False)
 
             def loop_insert():
                 """ loop insert """
@@ -200,7 +203,7 @@ class TestQueryNodeScale:
             # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
-    def test_scale_query_node_replicas(self):
+    def test_scale_query_replicas(self, image_tag):
         """
         target: test scale out querynode when load multi replicas
         method: 1.Deploy cluster with 5 querynodes
@@ -211,7 +214,7 @@ class TestQueryNodeScale:
         expected: Verify search succ rate is 100%
         """
         release_name = "scale-replica"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
@@ -236,9 +239,9 @@ class TestQueryNodeScale:
             scale_querynode = random.choice([6, 7, 4, 3])
             connections.connect("scale-replica", host=host, port=19530)
 
-            collection_w = ApiCollectionWrapper()
+            collection_w = ApiCollectionWrapper(active_trace=True)
             collection_w.init_collection(name=cf.gen_unique_str("scale_out"), schema=cf.gen_default_collection_schema(),
-                                         using='scale-replica', shards_num=3)
+                                         using='scale-replica', shards_num=3, active_trace=True)
 
             # create index
             collection_w.create_index(ct.default_float_vec_field_name, default_index_params, timeout=360)
@@ -256,7 +259,8 @@ class TestQueryNodeScale:
                 """ do search """
                 search_res, is_succ = collection_w.search(cf.gen_vectors(1, ct.default_dim),
                                                           ct.default_float_vec_field_name, ct.default_search_params,
-                                                          ct.default_limit, check_task=CheckTasks.check_nothing)
+                                                          ct.default_limit, check_task=CheckTasks.check_nothing,
+                                                          enable_traceback=False)
                 assert len(search_res) == 1
                 return search_res, is_succ
 
@@ -287,7 +291,7 @@ class TestQueryNodeScale:
             # read_pod_log(namespace=constants.NAMESPACE, label_selector=label, release_name=release_name)
             mic.uninstall(release_name, namespace=constants.NAMESPACE)
 
-    def test_scale_in_query_node_less_than_replicas(self):
+    def test_scale_in_query_node_less_than_replicas(self, image_tag):
         """
         target: test scale in cluster and querynode < replica
         method: 1.Deploy cluster with 3 querynodes
@@ -298,7 +302,7 @@ class TestQueryNodeScale:
         expected: Verify search successfully after scale out
         """
         release_name = "scale-in-query"
-        image = f'{constants.IMAGE_REPOSITORY}:{constants.IMAGE_TAG}'
+        image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         query_config = {
             'metadata.namespace': constants.NAMESPACE,
@@ -323,9 +327,9 @@ class TestQueryNodeScale:
             # prepare collection
             connections.connect("scale-in", host=host, port=19530)
             utility_w = ApiUtilityWrapper()
-            collection_w = ApiCollectionWrapper()
+            collection_w = ApiCollectionWrapper(active_trace=True)
             collection_w.init_collection(name=cf.gen_unique_str("scale_in"), schema=cf.gen_default_collection_schema(),
-                                         using="scale-in")
+                                         using="scale-in", active_trace=True)
             collection_w.insert(cf.gen_default_dataframe_data())
             assert collection_w.num_entities == ct.default_nb
 
