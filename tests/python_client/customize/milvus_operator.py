@@ -127,7 +127,7 @@ class MilvusOperator(object):
         starttime = time.time()
         log.info(f"start to check healthy: {starttime}")
         while time.time() < starttime + timeout:
-            time.sleep(10)
+            time.sleep(30)
             res_object = cus_res.get(release_name)
             mic_status = res_object.get('status', None)
             if mic_status is not None:
