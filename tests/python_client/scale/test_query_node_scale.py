@@ -104,15 +104,17 @@ class TestQueryNodeScale:
         }
         mic = MilvusOperator()
         mic.install(query_config)
-        if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
-            host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
-        else:
-            raise MilvusException(message=f'Milvus healthy timeout 1800s')
-
-        label = f"app.kubernetes.io/instance={release_name}"
-        scale_common.get_pod_names_list(label_selector=label)
 
         try:
+            # wait healthy
+            if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
+                host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
+            else:
+                raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+            label = f"app.kubernetes.io/instance={release_name}"
+            scale_common.get_pod_names_list(label_selector=label)
+
             # connect
             connections.add_connection(default={"host": host, "port": 19530})
             connections.connect(alias='default')
@@ -227,15 +229,18 @@ class TestQueryNodeScale:
         }
         mic = MilvusOperator()
         mic.install(query_config)
-        if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
-            host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
-        else:
-            raise MilvusException(message=f'Milvus healthy timeout 1800s')
-
-        label = f"app.kubernetes.io/instance={release_name}"
-        scale_common.get_pod_names_list(label_selector=label)
 
         try:
+            # wait healthy
+            if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
+                host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
+            else:
+                raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+            label = f"app.kubernetes.io/instance={release_name}"
+            scale_common.get_pod_names_list(label_selector=label)
+
+            # connect
             scale_querynode = random.choice([6, 7, 4, 3])
             connections.connect("scale-replica", host=host, port=19530)
 
@@ -315,15 +320,17 @@ class TestQueryNodeScale:
         }
         mic = MilvusOperator()
         mic.install(query_config)
-        if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
-            host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
-        else:
-            raise MilvusException(message=f'Milvus healthy timeout 1800s')
-
-        label = f"app.kubernetes.io/instance={release_name}"
-        scale_common.get_pod_names_list(label_selector=label)
 
         try:
+            # wait healthy
+            if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
+                host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
+            else:
+                raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+            label = f"app.kubernetes.io/instance={release_name}"
+            scale_common.get_pod_names_list(label_selector=label)
+
             # prepare collection
             connections.connect("scale-in", host=host, port=19530)
             utility_w = ApiUtilityWrapper()
