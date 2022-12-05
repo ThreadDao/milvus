@@ -55,15 +55,18 @@ class TestProxyScale:
         }
         mic = MilvusOperator()
         mic.install(data_config)
-        if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
-            host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
-        else:
-            raise MilvusException(message=f'Milvus healthy timeout 1800s')
-
-        label = f"app.kubernetes.io/instance={release_name}"
-        sc.get_pod_names_list(label_selector=label)
 
         try:
+            # wait healthy
+            if mic.wait_for_healthy(release_name, constants.NAMESPACE, timeout=1800):
+                host = mic.endpoint(release_name, constants.NAMESPACE).split(':')[0]
+            else:
+                raise MilvusException(message=f'Milvus healthy timeout 1800s')
+
+            label = f"app.kubernetes.io/instance={release_name}"
+            sc.get_pod_names_list(label_selector=label)
+
+            # e2e
             c_name = cf.gen_unique_str("proxy_scale")
             e2e_milvus_parallel(2, host, c_name)
             log.info('Milvus test before expand')
