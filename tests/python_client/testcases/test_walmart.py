@@ -46,7 +46,7 @@ class TestIssue(TestcaseBase):
         if coll_name in collections:
             collection_w.init_collection(name=coll_name)
             partitions = collection_w.partitions
-            assert len(partitions) == partition_num
+            assert len(partitions) == partition_num+1
         else:
             fields = [cf.gen_int64_field(), cf.gen_float_vec_field()]
             schema = cf.gen_collection_schema(fields, primary_field=ct.default_int64_field_name, auto_id=True)
