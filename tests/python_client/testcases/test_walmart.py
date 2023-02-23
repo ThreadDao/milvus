@@ -1,5 +1,6 @@
 import random
 import threading
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
 import pytest
 from pymilvus import connections
@@ -65,20 +66,19 @@ class TestIssue(TestcaseBase):
         collection_w.init_collection(name=coll_name)
 
         nb = 5
-        thread_num = 50
-        threads = []
+        task_num = 100
 
-        def do_insert(thread_i):
-            log.debug(f'In thread-{thread_i}')
-            for loop in range(100000):
+        def do_insert():
+            """
+            do insert
+            """
+            for loop in range(10000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb, dim=ct.default_dim)
                 _, res = collection_w.insert(data=vectors, partition_name=f"p_{random_p}")
                 assert res
 
-        for i in range(thread_num):
-            x = threading.Thread(target=do_insert, args=(i,))
-            threads.append(x)
-            x.start()
-        for t in threads:
-            t.join()
+        with ThreadPoolExecutor(max_workers=50) as t:
+            all_tasks = [t.submit(do_insert) for _ in range(task_num)]
+            wait(all_tasks, return_when=ALL_COMPLETED)
+            log.info('finished all insert')
