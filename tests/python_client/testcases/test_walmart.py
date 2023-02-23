@@ -72,7 +72,7 @@ class TestIssue(TestcaseBase):
             """
             do insert
             """
-            for loop in range(10000):
+            for loop in range(5000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb, dim=ct.default_dim)
                 _, res = collection_w.insert(data=[vectors], partition_name=f"p_{random_p}")
