@@ -75,7 +75,7 @@ class TestIssue(TestcaseBase):
             for loop in range(10000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb, dim=ct.default_dim)
-                _, res = collection_w.insert(data=vectors, partition_name=f"p_{random_p}")
+                _, res = collection_w.insert(data=[vectors], partition_name=f"p_{random_p}")
                 assert res
 
         with ThreadPoolExecutor(max_workers=50) as t:
