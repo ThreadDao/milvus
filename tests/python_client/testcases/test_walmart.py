@@ -38,19 +38,27 @@ class TestIssue(TestcaseBase):
         log.info("connect to milvus successfully")
 
     def test_prepare(self):
-        # create a collection
         collection_w = ApiCollectionWrapper()
-        fields = [cf.gen_int64_field(), cf.gen_float_vec_field()]
-        schema = cf.gen_collection_schema(fields, primary_field=ct.default_int64_field_name, auto_id=True)
-        collection_w.init_collection(name=coll_name, schema=schema)
 
-        # create many partitions
-        for i in range(partition_num):
-            partition_name = f"p_{i}"
-            collection_w.create_partition(partition_name)
+        # check list collection
+        collections, _ = self.utility_wrap.list_collections()
+        assert len(collections) == 1
+        if coll_name in collections:
+            collection_w.init_collection(name=coll_name)
+            partitions = collection_w.partitions
+            assert len(partitions) == partition_num
+        else:
+            fields = [cf.gen_int64_field(), cf.gen_float_vec_field()]
+            schema = cf.gen_collection_schema(fields, primary_field=ct.default_int64_field_name, auto_id=True)
+            collection_w.init_collection(name=coll_name, schema=schema)
 
-        partitions = collection_w.partitions
-        log.info(f"collection {coll_name} has {len(partitions)} partitions")
+            # create many partitions
+            for i in range(partition_num):
+                partition_name = f"p_{i}"
+                collection_w.create_partition(partition_name)
+
+            partitions = collection_w.partitions
+            log.info(f"collection {coll_name} has {len(partitions)} partitions")
 
     def test_insert(self):
         collection_w = ApiCollectionWrapper()
