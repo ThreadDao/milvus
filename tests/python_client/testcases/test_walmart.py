@@ -57,12 +57,12 @@ class TestIssue(TestcaseBase):
         collection_w.init_collection(name=coll_name)
 
         nb = 5
-        thread_num = 10
+        thread_num = 50
         threads = []
 
         def do_insert(thread_i):
             log.debug(f'In thread-{thread_i}')
-            for loop in range(1000):
+            for loop in range(10000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb)
                 _, res = collection_w.insert(data=vectors, partition_name=f"p_{random_p}")
