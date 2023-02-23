@@ -38,7 +38,7 @@ class TestIssue(TestcaseBase):
         log.info("connect to milvus successfully")
 
     def test_prepare(self):
-        collection_w = ApiCollectionWrapper()
+        collection_w = ApiCollectionWrapper(active_trace=True)
 
         # check list collection
         collections, _ = self.utility_wrap.list_collections()
@@ -70,7 +70,7 @@ class TestIssue(TestcaseBase):
 
         def do_insert(thread_i):
             log.debug(f'In thread-{thread_i}')
-            for loop in range(10000):
+            for loop in range(100000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb)
                 _, res = collection_w.insert(data=vectors, partition_name=f"p_{random_p}")
