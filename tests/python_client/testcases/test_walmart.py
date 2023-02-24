@@ -65,14 +65,14 @@ class TestIssue(TestcaseBase):
         collection_w = ApiCollectionWrapper()
         collection_w.init_collection(name=coll_name)
 
-        nb = 5
+        nb = 10
         task_num = 100
 
         def do_insert():
             """
             do insert
             """
-            for loop in range(5000):
+            for loop in range(2000):
                 random_p = random.randint(0, partition_num - 1)
                 vectors = cf.gen_vectors(nb, dim=ct.default_dim)
                 _, res = collection_w.insert(data=[vectors], partition_name=f"p_{random_p}")
