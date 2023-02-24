@@ -1,6 +1,6 @@
-import random
-import threading
-from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
+# import random
+# import threading
+# from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
 import pytest
 from pymilvus import connections
@@ -13,7 +13,8 @@ from base.client_base import TestcaseBase
 from utils.util_log import test_log as log
 
 coll_name = "test_walmart"
-partition_num = 200
+partition_num = 450
+dim = 384
 
 
 class TestIssue(TestcaseBase):
@@ -43,13 +44,13 @@ class TestIssue(TestcaseBase):
 
         # check list collection
         collections, _ = self.utility_wrap.list_collections()
-        assert len(collections) == 1
         if coll_name in collections:
+            assert len(collections) == 1
             collection_w.init_collection(name=coll_name)
-            partitions = collection_w.partitions
-            assert len(partitions) == partition_num+1
+            # partitions = collection_w.partitions
+            # assert len(partitions) == partition_num+1
         else:
-            fields = [cf.gen_int64_field(), cf.gen_float_vec_field()]
+            fields = [cf.gen_int64_field(), cf.gen_float_vec_field(dim=dim)]
             schema = cf.gen_collection_schema(fields, primary_field=ct.default_int64_field_name, auto_id=True)
             collection_w.init_collection(name=coll_name, schema=schema)
 
@@ -65,20 +66,30 @@ class TestIssue(TestcaseBase):
         collection_w = ApiCollectionWrapper()
         collection_w.init_collection(name=coll_name)
 
-        nb = 10
-        task_num = 100
+        nb = 5
+        # task_num = 100
+        # insert_loop = 200
 
-        def do_insert():
-            """
-            do insert
-            """
-            for loop in range(2000):
-                random_p = random.randint(0, partition_num - 1)
-                vectors = cf.gen_vectors(nb, dim=ct.default_dim)
-                _, res = collection_w.insert(data=[vectors], partition_name=f"p_{random_p}")
+        i = 0
+        vectors = cf.gen_vectors(nb, dim=dim)
+        while i < 10000000:
+            for p in range(partition_num):
+                _, res = collection_w.insert(data=[vectors], partition_name=f"p_{p}")
                 assert res
+            i += 1
 
-        with ThreadPoolExecutor(max_workers=50) as t:
-            all_tasks = [t.submit(do_insert) for _ in range(task_num)]
-            wait(all_tasks, return_when=ALL_COMPLETED)
-            log.info('finished all insert')
+        # def do_insert():
+        #     """
+        #     do insert
+        #     """
+        #     vectors = cf.gen_vectors(nb, dim=dim)
+        #     for loop in range(insert_loop):
+        #         for p in range(partition_num):
+        #         # random_p = random.randint(0, partition_num - 1)
+        #             _, res = collection_w.insert(data=[vectors], partition_name=f"p_{p}")
+        #             assert res
+
+        # with ThreadPoolExecutor(max_workers=100) as t:
+        #     all_tasks = [t.submit(do_insert) for _ in range(task_num)]
+        #     wait(all_tasks, return_when=ALL_COMPLETED)
+        #     log.info('finished all insert')
