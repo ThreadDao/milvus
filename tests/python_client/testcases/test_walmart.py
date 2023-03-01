@@ -1,6 +1,6 @@
-# import random
-# import threading
-# from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
+import random
+import threading
+from concurrent.futures import ThreadPoolExecutor, wait, ALL_COMPLETED
 
 import pytest
 from pymilvus import connections
@@ -66,30 +66,25 @@ class TestIssue(TestcaseBase):
         collection_w = ApiCollectionWrapper()
         collection_w.init_collection(name=coll_name)
 
-        nb = 5
-        # task_num = 100
-        # insert_loop = 200
+        nb = 2000
+        task_num = 100
+        insert_loop = 200
 
-        i = 0
-        vectors = cf.gen_vectors(nb, dim=dim)
-        while i < 10000000:
-            for p in range(partition_num):
-                _, res = collection_w.insert(data=[vectors], partition_name=f"p_{p}")
-                assert res
-            i += 1
+        def do_insert():
+            """
+            do insert
+            """
+            vectors = cf.gen_vectors(nb, dim=dim)
 
-        # def do_insert():
-        #     """
-        #     do insert
-        #     """
-        #     vectors = cf.gen_vectors(nb, dim=dim)
-        #     for loop in range(insert_loop):
-        #         for p in range(partition_num):
-        #         # random_p = random.randint(0, partition_num - 1)
-        #             _, res = collection_w.insert(data=[vectors], partition_name=f"p_{p}")
-        #             assert res
+            # loop 200 times, each time insert nb vectors into each partition
+            for loop in range(insert_loop):
+                for p in range(partition_num):
+                    # random_p = random.randint(0, partition_num - 1)
+                    _, res = collection_w.insert(data=[vectors], partition_name=f"p_{p}")
+                    assert res
 
-        # with ThreadPoolExecutor(max_workers=100) as t:
-        #     all_tasks = [t.submit(do_insert) for _ in range(task_num)]
-        #     wait(all_tasks, return_when=ALL_COMPLETED)
-        #     log.info('finished all insert')
+        with ThreadPoolExecutor(max_workers=100) as t:
+            # submit 100 tasks
+            all_tasks = [t.submit(do_insert) for _ in range(task_num)]
+            wait(all_tasks, return_when=ALL_COMPLETED)
+            log.info('finished all insert')
