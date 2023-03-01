@@ -69,12 +69,12 @@ class TestIssue(TestcaseBase):
         nb = 2000
         task_num = 100
         insert_loop = 200
+        vectors = cf.gen_vectors(nb, dim=dim)
 
         def do_insert():
             """
             do insert
             """
-            vectors = cf.gen_vectors(nb, dim=dim)
 
             # loop 200 times, each time insert nb vectors into each partition
             for loop in range(insert_loop):
