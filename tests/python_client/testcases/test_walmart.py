@@ -66,7 +66,7 @@ class TestIssue(TestcaseBase):
         collection_w = ApiCollectionWrapper()
         collection_w.init_collection(name=coll_name)
 
-        nb = 2000
+        nb = 50000
         task_num = 100
         insert_loop = 200
         vectors = cf.gen_vectors(nb, dim=dim)
