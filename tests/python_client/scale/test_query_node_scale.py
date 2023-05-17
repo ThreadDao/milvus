@@ -18,7 +18,7 @@ from utils.util_k8s import wait_pods_ready
 from utils.wrapper import counter
 
 nb = 10000
-default_index_params = {"index_type": "IVF_SQ8", "metric_type": "L2", "params": {"nlist": 64}}
+default_index_params = {"index_type": "IVF_SQ8", "metric_type": "COSINE", "params": {"nlist": 64}}
 
 
 def verify_load_balance(c_name, host, port=19530):
@@ -71,6 +71,8 @@ def verify_load_balance(c_name, host, port=19530):
         des_sealed_segment_ids += segment_distribution[des_node_id]["sealed"]
 
     # assert sealed_segment_ids is subset of des_sealed_segment_ids
+    log.debug(f"sealed_segment_ids is: {sealed_segment_ids}")
+    log.debug(f"des_sealed_segment_ids is: {des_sealed_segment_ids}")
     assert set(sealed_segment_ids).issubset(des_sealed_segment_ids)
 
 
