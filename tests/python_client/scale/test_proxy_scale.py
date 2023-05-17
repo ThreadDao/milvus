@@ -40,7 +40,7 @@ class TestProxyScale:
         """
         # deploy milvus cluster with one proxy
         fail_count = 0
-        release_name = "scale-proxy"
+        release_name = "scale-proxy-debug"
         image = f'{constants.IMAGE_REPOSITORY}:{image_tag}'
         log.info(f"milvus image {image}")
         data_config = {
