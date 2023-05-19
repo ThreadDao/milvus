@@ -2278,9 +2278,8 @@ class TestQueryCount(TestcaseBase):
                            check_task=CheckTasks.check_query_results,
                            check_items={exp_res: [{count: 2}]})
 
-    # TODO count(*) with page
     @pytest.mark.skip(reason="https://github.com/milvus-io/milvus/issues/23368")
-    @pytest.mark.tags(CaseLabel.L2)
+    @pytest.mark.tags(CaseLabel.L1)
     def test_count_with_pagination_param(self):
         """
         target: test count with pagination params
@@ -2292,18 +2291,18 @@ class TestQueryCount(TestcaseBase):
 
         # count with offset
         collection_w.query(expr=default_expr, output_fields=[ct.default_count_output], offset=10,
-                           check_task=CheckTasks.err_res,
-                           check_items={ct.err_code: 1, ct.err_msg: "xxx"}
+                           check_task=CheckTasks.check_query_results,
+                           check_items={exp_res: [{count: ct.default_nb}]}
                            )
         # count with limit
         collection_w.query(expr=default_expr, output_fields=[ct.default_count_output], limit=10,
-                           check_task=CheckTasks.err_res,
-                           check_items={ct.err_code: 1, ct.err_msg: "xxx"}
+                           check_task=CheckTasks.check_query_results,
+                           check_items={exp_res: [{count: ct.default_nb}]}
                            )
         # count with pagination params
         collection_w.query(default_expr, output_fields=[ct.default_count_output], params={"offset": 10, "limit": 10},
                            check_task=CheckTasks.err_res,
-                           check_items={ct.err_code: 1, ct.err_msg: "xxx"})
+                           check_items={ct.err_code: 1, ct.err_msg: "count entities with pagination is not allowed"})
 
     @pytest.mark.skip(reason="https://github.com/milvus-io/milvus/issues/23386")
     @pytest.mark.tags(CaseLabel.L2)
@@ -2325,14 +2324,16 @@ class TestQueryCount(TestcaseBase):
         collection_w_alias = self.init_collection_wrap(name=alias)
 
         # new insert partitions and count
-        p_name = "p_alias"
+        p_name = cf.gen_unique_str("p_alias")
         collection_w_alias.create_partition(p_name)
         collection_w_alias.insert(cf.gen_default_dataframe_data(start=ct.default_nb), partition_name=p_name)
         collection_w_alias.query(expr=default_expr, output_fields=[ct.default_count_output],
                                  check_task=CheckTasks.check_query_results,
                                  check_items={exp_res: [{count: ct.default_nb * 2}]})
 
-        # alias drop partition
+        # release partition -> alias drop partition
+        # self.partition_wrap.init_partition(collection_w_alias.name, p_name)
+        # self.partition_wrap.release()
         collection_w_alias.drop_partition(p_name)
         res, _ = collection_w_alias.has_partition(p_name)
         assert res is False
