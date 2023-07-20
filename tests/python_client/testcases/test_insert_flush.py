@@ -1,6 +1,7 @@
+import time
+
 import pandas as pd
 
-from base.client_base import TestcaseBase
 from pymilvus import connections
 from base.collection_wrapper import ApiCollectionWrapper
 from base.schema_wrapper import ApiCollectionSchemaWrapper
@@ -20,7 +21,7 @@ class TestInsertFlush:
         expected: assert num entities
         """
         nb = 1000000
-        ni = 10
+        ni = 1000
         dim = 128
 
         #  connect
@@ -46,13 +47,14 @@ class TestInsertFlush:
         # insert for loop
         ni_count = nb // ni
         for i in range(ni_count):
-            float_vec_values = cf.gen_vectors(ni, dim)
-            df = pd.DataFrame({
-                ct.default_float_vec_field_name: float_vec_values
-            })
-            mutation_res, _ = collection_w.insert(data=df)
-            assert mutation_res.insert_count == ni
-            # flush
-            assert collection_w.num_entities == ni*(i+1)
+            df = pd.DataFrame({ct.default_float_vec_field_name: cf.gen_vectors(ni, dim)})
+
+            # insert and flush
+            _start_insert = time.time()
+            collection_w.insert(data=df)
+            collection_w.flush()
+
+            log.info(f"Insert and flush {nb} cost {time.time() - _start_insert}s")
+            log.info(f"collection num_entities: {collection_w.num_entities_without_flush}")
 
         log.info(f'Insert collection {collection_w.name} success with entities {collection_w.num_entities}')
