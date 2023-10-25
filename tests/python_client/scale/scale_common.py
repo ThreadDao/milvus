@@ -35,10 +35,11 @@ def e2e_milvus(host, c_name):
     collection_w.init_collection(name=c_name, schema=cf.gen_default_collection_schema())
 
     # insert
-    df = cf.gen_default_dataframe_data()
-    mutation_res, _ = collection_w.insert(df)
-    assert mutation_res.insert_count == ct.default_nb
-    log.debug(collection_w.num_entities)
+    for i in range(10):
+        df = cf.gen_default_dataframe_data(start=(ct.default_nb*i))
+        mutation_res, _ = collection_w.insert(df)
+        assert mutation_res.insert_count == ct.default_nb
+        log.debug(collection_w.num_entities)
 
     # create index
     collection_w.create_index(ct.default_float_vec_field_name, ct.default_index)
@@ -56,7 +57,7 @@ def e2e_milvus(host, c_name):
     # query
     ids = search_res[0].ids[0]
     term_expr = f'{ct.default_int64_field_name} in [{ids}]'
-    query_res, _ = collection_w.query(term_expr, output_fields=["*", "%"])
+    query_res, _ = collection_w.query(term_expr, output_fields=["*"])
     assert query_res[0][ct.default_int64_field_name] == ids
 
 
