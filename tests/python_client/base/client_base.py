@@ -53,7 +53,7 @@ class Base:
         self.database_wrap = ApiDatabaseWrapper()
         self.high_level_api_wrap = HighLevelApiWrapper()
 
-    def teardown_method(self, method):
+    def _teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
         log.info("[teardown_method] Start teardown test case %s..." % method.__name__)
 
