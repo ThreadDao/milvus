@@ -80,7 +80,7 @@ class TestDynamic(TestcaseBase):
         collection_w = self.init_collection_wrap(name=c_name, schema=schema)
 
         # insert data
-        batch = 1000
+        batch = 2000
         # batch = 200
         nb = 4000
         # nb = 5000000
@@ -90,10 +90,12 @@ class TestDynamic(TestcaseBase):
         for i in range(0, ni_cunt):
             _data = []
             for _ in range(batch):
+                text = fake.text(max_nb_chars=1000)
                 row = {
                     vec_name: [random.random() for _ in range(dim)],
-                    "x": fake.texts(nb_texts=200),
-                    "y": fake.texts(nb_texts=200)
+                    "dynamic_x": text,
+                    "dynamic_y": text,
+                    "dynamic_z": text,
                 }
                 _data.append(row)
             insert_res, _ = collection_w.insert(_data)
