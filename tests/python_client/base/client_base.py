@@ -61,7 +61,7 @@ class Base:
     def teardown_method(self, method):
         log.info(("*" * 35) + " teardown " + ("*" * 35))
         log.info("[teardown_method] Start teardown test case %s..." % method.__name__)
-        self._teardown_objects()
+        # self._teardown_objects()
 
     def _teardown_objects(self):
         try:
