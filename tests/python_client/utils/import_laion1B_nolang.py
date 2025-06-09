@@ -209,6 +209,7 @@ class MilvusHandler:
     def import_data(self, collection_name: str, parquet_files: List[str]) -> None:
         files = [[file] for file in parquet_files]
         try:
+            start_time = time.time()
             resp = bulk_import(
                 url=self.config.milvus_url,
                 collection_name=collection_name,
@@ -221,12 +222,17 @@ class MilvusHandler:
                 progress_resp = get_import_progress(url=self.config.milvus_url, job_id=job_id)
                 progress_data = progress_resp.json()["data"]
                 state = progress_data['state']
+                elapsed_time = time.time() - start_time
                 logger.info(f"Task {job_id} state: {state}, progress: {progress_data['progress']}, "
-                            f"imported {progress_data['importedRows']} rows of total {progress_data['totalRows']}")
+                          f"imported {progress_data['importedRows']} rows of total {progress_data['totalRows']}, "
+                          f"elapsed time: {elapsed_time:.2f}s")
 
                 if state == "Failed":
                     raise Exception(f"Import job {job_id} failed")
                 if state == "Completed":
+                    total_time = time.time() - start_time
+                    logger.info(f"Import completed. Total time: {total_time:.2f}s, "
+                              f"Average speed: {progress_data['importedRows']/total_time:.2f} rows/s")
                     break
                 time.sleep(3)
         except Exception as e:
