@@ -87,7 +87,20 @@ class Config:
         config.parquet_files_num = args.parquet_files_num
         config.action = args.action
         config.prepare_clean = args.prepare_clean
+        config.create_index = args.create_index
         return config
+
+    def __str__(self):
+        config_items = [
+            f"Milvus URL: {self.milvus_url}",
+            f"MinIO Endpoint: {self.minio_endpoint}",
+            f"Bucket Name: {self.bucket_name}",
+            f"Parquet Files Number: {self.parquet_files_num}",
+            f"Action: {self.action}",
+            f"Prepare Clean: {self.prepare_clean}",
+            f"Create Index: {self.create_index}"
+        ]
+        return "\nConfiguration:\n" + "\n".join(f"  {item}" for item in config_items)
 
 
 def gen_random_name(prefix: str) -> str:
@@ -206,9 +219,10 @@ class MilvusHandler:
 
             while True:
                 progress_resp = get_import_progress(url=self.config.milvus_url, job_id=job_id)
-                progress_dict = progress_resp.json()
-                state = progress_dict['data']['state']
-                logger.info(f"Task {job_id} state: {state}")
+                progress_data = progress_resp.json()["data"]
+                state = progress_data['state']
+                logger.info(f"Task {job_id} state: {state}, progress: {progress_data['progress']}, "
+                            f"imported {progress_data['importedRows']} rows of total {progress_data['totalRows']}")
 
                 if state == "Failed":
                     raise Exception(f"Import job {job_id} failed")
